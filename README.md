@@ -279,3 +279,21 @@ void loop() {
 }
 
 // end of code
+
+You are currently connected to an Arduino via USB. You can utilize the Arduino CLI tools to automatically upload your code and test it with the serial port for feedback.
+
+
+Each sketch should be in a folder with the same name as the .ino file
+
+To compile, use this command: 
+
+  arduino-cli compile --fqbn esp32:esp32:esp32c3 .
+
+To upload, use this command: 
+
+  arduino-cli upload -p /dev/cu.usbserial-0001 --fqbn esp32:esp32:esp32c3 .
+
+
+You can monitor the Serial port for feedback with command 
+
+  arduino-cli monitor -p /dev/cu.usbserial-0001
