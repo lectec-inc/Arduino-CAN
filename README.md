@@ -72,9 +72,6 @@ Apply scaling factors and offsets exactly as specified.
 Student-Facing API (student_api.h/.cpp)
 Arduino functions callable like:
 
-cpp
-Copy
-Edit
 setDutyCycle(0.3);
 float rpm = getRPM();
 float temp = getMotorTemp();
@@ -147,9 +144,7 @@ All others should be ignored or logged in debug mode. Use the correct VESC ID (d
 Provide a simple header (student_api.h) exposing safe, clear Arduino functions:
 
 Example Read Functions
-cpp
-Copy
-Edit
+
 float getRPM();
 float getDuty();
 float getMotorCurrent();
@@ -157,9 +152,7 @@ float getVoltage();
 float getMotorTemp();
 float getFETTemp();
 Example Write Functions
-cpp
-Copy
-Edit
+
 void setDutyCycle(float duty);        // e.g., 0.3
 void setCurrent(float amps);          // e.g., 5.0
 void setCurrentBrake(float amps);     // e.g., -3.0

@@ -166,125 +166,44 @@ bool parseVESCMessage(uint32_t id, uint8_t len, uint8_t* data) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // 📺 DISPLAY FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
-void printHeader() {
-  Serial.println();
-  Serial.println("╔══════════════════════════════════════════════════════════════════════════════╗");
-  Serial.println("║                            🚗 VESC TELEMETRY MONITOR                         ║");
-  Serial.println("╚══════════════════════════════════════════════════════════════════════════════╝");
-  Serial.print("📡 Print Rate: ");
-  Serial.print(PRINT_RATE_HZ, 1);
-  Serial.println(" Hz");
-  Serial.println();
-}
-
-void printSeparator() {
-  Serial.println("├─────────────────────────────────────────────────────────────────────────────┤");
-}
-
-void printValue(const char* label, float value, const char* unit, int width = 8, int decimals = 2) {
-  Serial.print("│ ");
-  Serial.print(label);
-  Serial.print(": ");
-  
-  // Pad the value field
-  String valueStr = String(value, decimals) + unit;
-  while (valueStr.length() < width) {
-    valueStr = " " + valueStr;
-  }
-  Serial.print(valueStr);
-}
-
-void clearScreen() {
-  // Clear screen and move cursor to top
-  Serial.print("\033[2J");      // Clear entire screen
-  Serial.print("\033[H");       // Move cursor to home position (top-left)
-}
 
 void printStatus() {
   unsigned long data_age = millis() - vesc.last_update;
   
-  // Clear screen and redraw (comment out the clearScreen() line for scrolling mode)
-  clearScreen();
-  
-  Serial.println("╔══════════════════════════════════════════════════════════════════════════════╗");
-  Serial.println("║                         🚗 VESC TELEMETRY MONITOR                          ║");
-  Serial.println("╚══════════════════════════════════════════════════════════════════════════════╝");
-  
-  Serial.println("┌─────────────────────────────────────────────────────────────────────────────┐");
-  Serial.print("│ ⏰ Time: ");
+  Serial.print("Time: ");
   Serial.print(millis() / 1000.0, 1);
-  Serial.print("s");
+  Serial.print("s | ");
   
-  Serial.print("    📊 Messages: ");
-  Serial.print(total_messages);
-  
-  Serial.print("    🔄 VESC: ");
-  Serial.print(vesc.message_count);
-  
-  Serial.print("    📡 Age: ");
-  Serial.print(data_age);
-  Serial.println("ms │");
-  
-  printSeparator();
-  
-  // Motor Performance
-  printValue("⚡ RPM", vesc.rpm, " rpm", 12, 0);
-  printValue("🔋 Duty", vesc.duty_cycle * 100, "%", 8, 1);
-  Serial.println(" │");
-  
-  printValue("🔌 Motor I", vesc.motor_current, "A", 8, 2);
-  printValue("📥 Input I", vesc.input_current, "A", 8, 2);
-  Serial.println(" │");
-  
-  printSeparator();
-  
-  // Power & Energy
-  printValue("⚡ Voltage", vesc.input_voltage, "V", 8, 2);
-  printValue("🔋 Ah Used", vesc.amp_hours, "Ah", 8, 3);
-  Serial.println(" │");
-  
-  printValue("⚡ Wh Used", vesc.watt_hours, "Wh", 8, 2);
-  printValue("🔄 Ah Regen", vesc.amp_hours_charged, "Ah", 8, 3);
-  Serial.println(" │");
-  
-  printSeparator();
-  
-  // Temperatures
-  printValue("🌡️ FET Temp", vesc.fet_temp, "°C", 8, 1);
-  printValue("🔥 Motor T", vesc.motor_temp, "°C", 8, 1);
-  Serial.println(" │");
-  
-  printSeparator();
-  
-  // Position & Control
-  printValue("📍 PID Pos", vesc.pid_position, "°", 8, 1);
-  printValue("🔢 Tacho", vesc.tacho_value, "", 12, 0);
-  Serial.println(" │");
-  
-  printSeparator();
-  
-  // ADC Inputs
-  printValue("📊 ADC1", vesc.adc1, "V", 8, 3);
-  printValue("📊 ADC2", vesc.adc2, "V", 8, 3);
-  Serial.println(" │");
-  
-  printValue("📊 ADC3", vesc.adc3, "V", 8, 3);
-  printValue("📡 PPM", vesc.ppm, "V", 8, 3);
-  Serial.println(" │");
-  
-  Serial.println("└─────────────────────────────────────────────────────────────────────────────┘");
-  
-  // Data status
-  if (!vesc.data_valid) {
-    Serial.println("⚠️  WARNING: No VESC data received yet");
-  } else if (data_age > 1000) {
-    Serial.println("⚠️  WARNING: VESC data is stale (>1s old)");
-  } else if (data_age > 100) {
-    Serial.println("⚠️  CAUTION: VESC data aging");
+  // Check if data is fresh (within last 1 second)
+  if (!vesc.data_valid || data_age > 1000) {
+    Serial.println("Status: NO DATA - VESC disconnected or not responding");
+    return;
   }
   
-  Serial.println();
-  Serial.print("💡 Tip: To switch to scrolling mode, comment out clearScreen() call");
+  // Check if data is getting stale (within last 500ms but show warning)
+  if (data_age > 500) {
+    Serial.print("Status: STALE DATA (");
+    Serial.print(data_age);
+    Serial.print("ms old) | ");
+  } else {
+    Serial.print("Status: CONNECTED | ");
+  }
+  
+  Serial.print("Voltage: ");
+  Serial.print(vesc.input_voltage, 2);
+  Serial.print("V | RPM: ");
+  Serial.print((int)vesc.rpm);
+  Serial.print(" | Duty: ");
+  Serial.print(vesc.duty_cycle * 100, 1);
+  Serial.print("% | Motor Current: ");
+  Serial.print(vesc.motor_current, 2);
+  Serial.print("A | Battery Current: ");
+  Serial.print(vesc.input_current, 2);
+  Serial.print("A | FET Temp: ");
+  Serial.print(vesc.fet_temp, 1);
+  Serial.print("C | Amp Hours: ");
+  Serial.print(vesc.amp_hours, 3);
+  Serial.println("Ah");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -294,29 +213,32 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   
-  printHeader();
+  Serial.println("VESC CAN Monitor Starting...");
+  Serial.print("Print Rate: ");
+  Serial.print(PRINT_RATE_HZ, 1);
+  Serial.println(" Hz");
   
   // Initialize VESC data
   memset(&vesc, 0, sizeof(vesc));
   vesc.data_valid = false;
   
-  Serial.println("🔧 Initializing CAN interface...");
+  Serial.println("Initializing CAN interface...");
   SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI, PIN_CS);
   
   if (CAN.begin(MCP_STDEXT, CAN_500KBPS, MCP_16MHZ) != CAN_OK) {
-    Serial.println("❌ ERROR: CAN initialization failed!");
-    Serial.println("   Check MCP2515 wiring and connections");
+    Serial.println("ERROR: CAN initialization failed!");
+    Serial.println("Check MCP2515 wiring and connections");
     while (1) {
       delay(1000);
-      Serial.println("💥 CAN FAILED - System halted");
+      Serial.println("CAN FAILED - System halted");
     }
   }
   
   CAN.setMode(MCP_NORMAL);
   pinMode(PIN_INT, INPUT_PULLUP);
   
-  Serial.println("✅ CAN interface ready");
-  Serial.println("🔍 Listening for VESC messages...");
+  Serial.println("CAN interface ready");
+  Serial.println("Listening for VESC messages...");
   Serial.println();
   
   delay(1000);
