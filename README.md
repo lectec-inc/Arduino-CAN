@@ -217,3 +217,65 @@ Wiring:
 - CAN_RST = 5
 - CAN_SCK = 6
 - CAN_MOSI = 7
+
+Working Code that prints packets:
+
+/*
+  MCP2515 listen-only sanity check
+  ESP32-C3-DevKitM-1  ·  MCP2515 @16 MHz  ·  500 kbit/s
+*/
+
+#include <SPI.h>
+#include <mcp_can.h>
+
+// ── Pin map ─────────────────────────────────────────────────────────
+constexpr uint8_t PIN_SCK  = 6;    // GPIO6  → SCK
+constexpr uint8_t PIN_MISO = 2;    // GPIO2  → SO
+constexpr uint8_t PIN_MOSI = 7;    // GPIO7  → SI
+constexpr uint8_t PIN_CS   = 10;   // GPIO10 → CS  (10 k pull-up to 3 V3)
+constexpr uint8_t PIN_INT  = 4;    // GPIO4  → INT (100 Ω series OK)
+
+MCP_CAN CAN(PIN_CS);
+
+// ── Setup ───────────────────────────────────────────────────────────
+void setup() {
+  Serial.begin(115200);
+  delay(300);
+
+  SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI, PIN_CS);
+
+  if (CAN.begin(MCP_STDEXT, CAN_500KBPS, MCP_16MHZ) != CAN_OK) {
+    Serial.println(F("CAN init failed – check wiring / crystal enum"));
+    while (1) delay(1000);
+  }
+
+  CAN.setMode(MCP_LISTENONLY);      // **passive mode**
+  pinMode(PIN_INT, INPUT_PULLUP);
+
+  Serial.println(F("Listening only …"));
+}
+
+// ── Loop ────────────────────────────────────────────────────────────
+void loop() {
+  if (!digitalRead(PIN_INT)) {      // INT asserted ⇒ frame latched
+    unsigned long can_id;           // 29-bit or 11-bit ID
+    byte         len;
+    byte         buf[8];
+
+    CAN.readMsgBuf(&can_id, &len, buf);   // library’s 3-arg version
+
+    Serial.print(F("ID 0x"));
+    Serial.print(can_id, HEX);
+    Serial.print(F("  DLC "));
+    Serial.print(len);
+    Serial.print(F("  DATA "));
+    for (byte i = 0; i < len; ++i) {
+      if (buf[i] < 0x10) Serial.print('0');
+      Serial.print(buf[i], HEX);
+      Serial.print(' ');
+    }
+    Serial.println();
+  }
+}
+
+// end of code
