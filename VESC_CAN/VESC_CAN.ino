@@ -170,9 +170,8 @@ bool parseVESCMessage(uint32_t id, uint8_t len, uint8_t* data) {
 void printStatus() {
   unsigned long data_age = millis() - vesc.last_update;
   
-  Serial.print("Time: ");
   Serial.print(millis() / 1000.0, 1);
-  Serial.print("s | ");
+  Serial.print("s ");
   
   // Check if data is fresh (within last 1 second)
   if (!vesc.data_valid || data_age > 1000) {
@@ -186,7 +185,7 @@ void printStatus() {
     Serial.print(data_age);
     Serial.print("ms old) | ");
   } else {
-    Serial.print("Status: CONNECTED | ");
+    Serial.print("✅ ");
   }
   
   Serial.print("Voltage: ");
